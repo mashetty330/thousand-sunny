@@ -7,44 +7,9 @@ on:
 
 jobs:
   cherry-pick:
+    if: ${{ github.event.label.name == 'bug' }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Check if PR is merged and labeled
-        run: |
-          if [ "${{ github.event.pull_request.merged }}" == "true" ]; then
-            LABEL=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ github.event.pull_request.url }}/labels")
-            echo "LABEL: $LABEL"
-            if [ "$LABEL" != "" ]; then
-              echo "PR is merged and labeled with $LABEL"
-              TARGET_BRANCH="release-${LABEL:18}"
-              echo "Target release branch: $TARGET_BRANCH"
-
-              git checkout $TARGET_BRANCH
-              git pull origin $TARGET_BRANCH
-              git checkout -b cherry-pick-pr
-              git cherry-pick "${{ github.event.pull_request.merge_commit_sha }}"
-              # Handle any potential conflicts here if necessary
-              git push origin cherry-pick-pr
-
-              # Create a new pull request
-              curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -d '{
-                  "title": "Cherry-pick to '$TARGET_BRANCH'",
-                  "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
-                  "head": "cherry-pick-pr",
-                  "base": "'$TARGET_BRANCH'"
-                }'
-            else
-              echo "PR is not labeled for cherry-pick"
-            fi
-          else
-            echo "PR is not merged"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v2
+    - name: Run a one-line script
+      run: echo Hello, world!
