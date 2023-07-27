@@ -34,12 +34,12 @@ jobs:
 
               # Log the LABEL value to the console
               echo "LABEL: $LABEL"
-
-              # Debug: list all branches
+              
               git fetch --all --prune
+              git show-ref --verify --quiet refs/heads/$TARGET_BRANCH
               
               # Check if the target release branch exists
-              if git show-ref --quiet refs/heads/$TARGET_BRANCH; then
+              if [ $? -eq 0 ]; then
                 echo "Target release branch exists: $TARGET_BRANCH"
                 git checkout $TARGET_BRANCH
                 git pull origin $TARGET_BRANCH
@@ -60,8 +60,6 @@ jobs:
                   }'
               else
                 echo "Target release branch does not exist: $TARGET_BRANCH"
-                git fetch --all --prune
-                # Debug: list all branches again
                 git branch -a
               fi
             else
