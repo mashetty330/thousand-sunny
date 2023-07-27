@@ -15,10 +15,27 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const comment = context.payload.pull_request.body || '' ;
-            console.log(`Pull Request Body: ${comment}`);
+            const { data: pullRequest } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const description = pullRequest.body || '';
+            console.log(`Pull Request Description: ${description}`);
+
+            const comments = await github.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            comments.data.forEach(comment => {
+              console.log(`Comment: ${comment.body}`);
+            });
+
             const regex = /\/cherry-pick\s+release-(\d+\.\d+)/;
-            const match = comment.match(regex);
+            const match = description.match(regex);
             if (match) {
               return { branch: `release-${match[1]}` };
             } else {
