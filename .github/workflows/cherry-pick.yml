@@ -1,0 +1,47 @@
+name: Cherry Pick PR
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  cherry_pick_job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for cherry-pick command
+        id: check_command
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = context.payload.pull_request.body;
+            const regex = /\/cherry-pick\s+release-(\d+\.\d+)/;
+            const match = comment.match(regex);
+            if (match) {
+              return { branch: `release-${match[1]}` };
+            } else {
+              return {};
+            }
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      - name: Cherry Pick changes
+        if: steps.check_command.outputs.branch
+        run: |
+          git fetch origin ${{ steps.check_command.outputs.branch }} && git checkout -b cherry-pick-branch && git cherry-pick ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Push cherry-pick branch
+        if: steps.check_command.outputs.branch
+        run: git push origin cherry-pick-branch
+
+      - name: Create pull request
+        if: steps.check_command.outputs.branch
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ steps.check_command.outputs.branch }}
+          head: cherry-pick-branch
+          title: "Cherry-pick PR: #${{ github.event.pull_request.number }}"
+          body: "This is a cherry-pick of #${{ github.event.pull_request.number }}."
+
+
