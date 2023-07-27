@@ -4,65 +4,47 @@ on:
     types:
       - closed
 
+
 jobs:
-  cherry_pick_job:
+  cherry-pick:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install Octokit
-        run: npm install @octokit/rest
-
-      - name: Check for cherry-pick command in comments
+      - name: Check if PR is merged and labeled
         run: |
-          bash -c '
-          const { Octokit } = require("@octokit/rest");
-          const octokit = new Octokit({
-            auth: process.env.GITHUB_TOKEN,
-          });
+          if [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+            LABEL=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ github.event.pull_request.url }}/labels" | jq -r '.[].name | select(. | startswith("cherry-pick-release-"))')
 
-          const comments = await octokit.issues.listComments({
-            owner: process.env.GITHUB_REPOSITORY_OWNER,
-            repo: process.env.GITHUB_REPOSITORY,
-            issue_number: process.env.GITHUB_EVENT_PULL_NUMBER,
-          });
+            if [ "$LABEL" != "" ]; then
+              echo "PR is merged and labeled with $LABEL"
+              TARGET_BRANCH="release-${LABEL:18}"
+              echo "Target release branch: $TARGET_BRANCH"
 
-          comments.data.forEach(comment => {
-            console.log(`Comment: ${comment.body}`);
-            const regex = /\/cherry-pick\s+release-(\d+\.\d+)/;
-            const match = comment.body.match(regex);
-            if (match) {
-              console.log(`Cherry-pick to branch: release-${match[1]}`);
-              return { branch: `release-${match[1]}` };
-            }
-          });
-          '
+              git checkout $TARGET_BRANCH
+              git pull origin $TARGET_BRANCH
+              git checkout -b cherry-pick-pr
+              git cherry-pick "${{ github.event.pull_request.merge_commit_sha }}"
+              # Handle any potential conflicts here if necessary
+              git push origin cherry-pick-pr
+
+              # Create a new pull request
+              curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -d '{
+                  "title": "Cherry-pick to '$TARGET_BRANCH'",
+                  "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
+                  "head": "cherry-pick-pr",
+                  "base": "'$TARGET_BRANCH'"
+                }'
+            else
+              echo "PR is not labeled for cherry-pick"
+            fi
+          else
+            echo "PR is not merged"
+          fi
         env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-      - name: Cherry Pick changes
-        if: steps.check_command.outputs.branch
-        run: |
-          git fetch origin ${{ steps.check_command.outputs.branch }} && git checkout -b cherry-pick-branch && git cherry-pick ${{ github.event.pull_request.merge_commit_sha }}
-
-      - name: Push cherry-pick branch
-        if: steps.check_command.outputs.branch
-        run: git push origin cherry-pick-branch
-
-      - name: Create pull request
-        if: steps.check_command.outputs.branch
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ steps.check_command.outputs.branch }}
-          head: cherry-pick-branch
-          title: "Cherry-pick PR: #${{ github.event.pull_request.number }}"
-          body: "This is a cherry-pick of #${{ github.event.pull_request.number }}."
-
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
