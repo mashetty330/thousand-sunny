@@ -9,38 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check for cherry-pick command
-        id: check_command
-        uses: actions/github-script@v5
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pullRequest } = await context.github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-            });
+          node-version: '14'
 
-            const description = pullRequest.body || '';
-            console.log(`Pull Request Description: ${description}`);
+      - name: Install Octokit
+        run: npm install @octokit/rest
 
-            const comments = await context.github.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-            });
+      - name: Check for cherry-pick command in comments
+        run: |
+          const { Octokit } = require("@octokit/rest");
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN,
+          });
 
-            comments.data.forEach(comment => {
-              console.log(`Comment: ${comment.body}`);
-            });
+          const comments = await octokit.issues.listComments({
+            owner: process.env.GITHUB_REPOSITORY_OWNER,
+            repo: process.env.GITHUB_REPOSITORY,
+            issue_number: process.env.GITHUB_EVENT_PULL_NUMBER,
+          });
 
+          comments.data.forEach(comment => {
+            console.log(`Comment: ${comment.body}`);
             const regex = /\/cherry-pick\s+release-(\d+\.\d+)/;
-            const match = description.match(regex);
+            const match = comment.body.match(regex);
             if (match) {
+              console.log(`Cherry-pick to branch: release-${match[1]}`);
               return { branch: `release-${match[1]}` };
-            } else {
-              return {};
             }
+          });
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Cherry Pick changes
