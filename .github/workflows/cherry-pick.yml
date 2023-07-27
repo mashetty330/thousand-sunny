@@ -36,8 +36,8 @@ jobs:
               echo "LABEL: $LABEL"
 
               # Debug: list all branches
-              git branch -a
-
+              git fetch --all --prune
+              
               # Check if the target release branch exists
               if git show-ref --quiet refs/heads/$TARGET_BRANCH; then
                 echo "Target release branch exists: $TARGET_BRANCH"
