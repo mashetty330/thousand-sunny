@@ -16,8 +16,8 @@ jobs:
       - name: Check if PR is merged and labeled
         run: |
           if [ "${{ github.event.pull_request.merged }}" == "true" ]; then
-            LABEL=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ github.event.pull_request.url }}/labels" | jq -r '.[].name | select(startswith("cherry-pick-release-"))')
-
+            LABEL=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ github.event.pull_request.url }}/labels")
+            echo "LABEL: $LABEL"
             if [ "$LABEL" != "" ]; then
               echo "PR is merged and labeled with $LABEL"
               TARGET_BRANCH="release-${LABEL:18}"
