@@ -16,6 +16,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const comment = context.payload.pull_request.body || '' ;
+            console.log(`Pull Request Body: ${comment}`);
             const regex = /\/cherry-pick\s+release-(\d+\.\d+)/;
             const match = comment.match(regex);
             if (match) {
