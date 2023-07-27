@@ -36,7 +36,7 @@ jobs:
               echo "LABEL: $LABEL"
               
               git fetch --all --prune
-              git show-ref --verify --quiet refs/heads/$TARGET_BRANCH
+ 
 
               echo "Target release branch exists: $TARGET_BRANCH"
               git checkout $TARGET_BRANCH
