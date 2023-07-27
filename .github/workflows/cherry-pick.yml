@@ -35,23 +35,35 @@ jobs:
               # Log the LABEL value to the console
               echo "LABEL: $LABEL"
 
-              git checkout $TARGET_BRANCH
-              git pull origin $TARGET_BRANCH
-              git checkout -b cherry-pick-pr
-              git cherry-pick "${{ github.event.pull_request.merge_commit_sha }}"
-              # Handle any potential conflicts here if necessary
-              git push origin cherry-pick-pr
+              # Debug: list all branches
+              git branch -a
 
-              # Create a new pull request
-              curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -d '{
-                  "title": "Cherry-pick to '$TARGET_BRANCH'",
-                  "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
-                  "head": "cherry-pick-pr",
-                  "base": "'$TARGET_BRANCH'"
-                }'
+              # Check if the target release branch exists
+              if git show-ref --quiet refs/heads/$TARGET_BRANCH; then
+                echo "Target release branch exists: $TARGET_BRANCH"
+                git checkout $TARGET_BRANCH
+                git pull origin $TARGET_BRANCH
+                git checkout -b cherry-pick-pr
+                git cherry-pick "${{ github.event.pull_request.merge_commit_sha }}"
+                # Handle any potential conflicts here if necessary
+                git push origin cherry-pick-pr
+
+                # Create a new pull request
+                curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
+                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -d '{
+                    "title": "Cherry-pick to '$TARGET_BRANCH'",
+                    "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
+                    "head": "cherry-pick-pr",
+                    "base": "'$TARGET_BRANCH'"
+                  }'
+              else
+                echo "Target release branch does not exist: $TARGET_BRANCH"
+                git fetch --all --prune
+                # Debug: list all branches again
+                git branch -a
+              fi
             else
               echo "PR is not labeled for cherry-pick"
             fi
