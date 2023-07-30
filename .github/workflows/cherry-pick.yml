@@ -44,8 +44,8 @@ jobs:
  
 
               echo "Target release branch exists: $TARGET_BRANCH"
-              git checkout master && git fetch --all && git reset --hard master
               git checkout $TARGET_BRANCH
+              git pull origin $TARGET_BRANCH
               git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}"
               echo "checked out cherry pick pr branch"
               git cherry-pick "${{ github.event.pull_request.merge_commit_sha }}"
