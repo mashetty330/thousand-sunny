@@ -53,10 +53,18 @@ jobs:
               git cherry-pick "${{ github.event.pull_request.head.sha }}"
               echo "fetched commit"
               # Handle any potential conflicts here if necessary
-              git push origin cherry-pick-pr
+              git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
               echo "pushed"
               # Create a new pull request
-              git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
+              curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
+                -H "Authorization: token ${{ secrets.ACTION_PAT }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -d '{
+                  "title": "Cherry-pick to '$TARGET_BRANCH'",
+                  "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
+                  "head": "cherry-pick-pr-${{ github.event.pull_request.number }}",
+                  "base": "'$TARGET_BRANCH'"
+                }'
             else
               echo "PR is not labeled for cherry-pick"
             fi
