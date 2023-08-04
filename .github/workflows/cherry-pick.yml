@@ -42,9 +42,7 @@ jobs:
               
               git fetch --all --prune
 
-              for commit in $(jq -r '.commits[].sha' <<< "${{ github.event.pull_request.head }}"); do
-                echo "Sha: $commit"
-              done
+              echo " Head: ${{ github.event.pull_request.head }}"
               
               echo "Target release branch exists: $TARGET_BRANCH"
               git checkout master && git fetch --all && git reset --hard origin/master
