@@ -62,7 +62,7 @@ jobs:
                 -d '{
                   "title": "Cherry-pick to '$TARGET_BRANCH'",
                   "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
-                  "head": "cherry-pick-pr",
+                  "head": "cherry-pick-pr-${{ github.event.pull_request.number }}",
                   "base": "'$TARGET_BRANCH'"
                 }'
             else
