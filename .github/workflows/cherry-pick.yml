@@ -46,7 +46,6 @@ jobs:
               echo "Target release branch exists: $TARGET_BRANCH"
               git checkout master && git fetch --all && git reset --hard origin/master
               git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
-              git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
               #git pull origin $TARGET_BRANCH
               #git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}"
               echo "checked out cherry pick pr branch"
@@ -57,15 +56,7 @@ jobs:
               git push origin cherry-pick-pr
               echo "pushed"
               # Create a new pull request
-              curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
-                -H "Authorization: token ${{ secrets.ACTION_PAT }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -d '{
-                  "title": "Cherry-pick to '$TARGET_BRANCH'",
-                  "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
-                  "head": "cherry-pick-pr-${{ github.event.pull_request.number }}",
-                  "base": "'$TARGET_BRANCH'"
-                }'
+              git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
             else
               echo "PR is not labeled for cherry-pick"
             fi
