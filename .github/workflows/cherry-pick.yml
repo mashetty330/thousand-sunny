@@ -41,13 +41,13 @@ jobs:
 
               echo "Target release branch exists: $TARGET_BRANCH"
               git checkout master && git fetch --all && git reset --hard origin/master
-              output=$(git log "$GITHUB_SHA"^.."$GITHUB_SHA")
-              commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
+              #output=$(git log "$GITHUB_SHA"^.."$GITHUB_SHA")
+              #commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
               git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
               echo "checked out cherry pick pr branch"
             
               echo "commit sha ${{ github.event.pull_request.head.sha }}"
-              git cherry-pick $commit_shas
+              git cherry-pick -m 1 $GITHUB_SHA
               echo "fetched commit"
               # Handle any potential conflicts here if necessary
               git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
