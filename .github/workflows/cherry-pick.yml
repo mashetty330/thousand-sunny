@@ -48,8 +48,8 @@ jobs:
               echo "checked out cherry pick pr branch"
               
               
-              output = $(git log $GITHUB_SHA^..$GITHUB_SHA)
-              commit_shas = $(echo "$output" | sed '1d' | tr '\n' ' ')
+              output=$(git log "$GITHUB_SHA"^.."$GITHUB_SHA")
+              commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
               echo "commit sha ${{ github.event.pull_request.head.sha }}"
               git cherry-pick $commit_shas
               echo "fetched commit"
