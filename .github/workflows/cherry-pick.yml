@@ -36,20 +36,16 @@ jobs:
               echo "PR is merged and labeled with $LABEL"
               TARGET_BRANCH="release-$(echo $LABEL | cut -d'-' -f4-)"
               echo "Target release branch: $TARGET_BRANCH"
-
-              # Log the LABEL value to the console
-              echo "LABEL: $LABEL"
               
               git fetch --all --prune
 
               echo "Target release branch exists: $TARGET_BRANCH"
               git checkout master && git fetch --all && git reset --hard origin/master
-              git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
-              echo "checked out cherry pick pr branch"
-              
-              
               output=$(git log "$GITHUB_SHA"^.."$GITHUB_SHA")
               commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
+              git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
+              echo "checked out cherry pick pr branch"
+            
               echo "commit sha ${{ github.event.pull_request.head.sha }}"
               git cherry-pick $commit_shas
               echo "fetched commit"
