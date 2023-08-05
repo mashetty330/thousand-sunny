@@ -61,14 +61,14 @@ jobs:
                 git reset --hard origin/master
                 output=$(git log "${{ github.event.pull_request.merge_commit_sha }}"^.."${{ github.event.pull_request.merge_commit_sha }}" --format="%H")
                 commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
-                git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
+                git checkout -b "$TARGET_BRANCH"-cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
                 echo "Checked out cherry pick pr branch"
               
                 echo "These are the commits need cherry-pick : $commit_shas"
                 git cherry-pick $commit_shas
                 echo "Cherry-picked commits"
                 # Handle any potential conflicts here if necessary
-                git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
+                git push origin "$TARGET_BRANCH"-cherry-pick-pr-"${{ github.event.pull_request.number }}"
                 echo "Pushed to the Cherry-pick branch"
                 # Create a new pull request
                 curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
@@ -77,7 +77,7 @@ jobs:
                   -d '{
                     "title": "Cherry-pick to '$TARGET_BRANCH'",
                     "body": "This PR is a cherry-pick of the changes from #${{ github.event.pull_request.number }}",
-                    "head": "cherry-pick-pr-${{ github.event.pull_request.number }}",
+                    "head": "'$TARGET_BRANCH'-cherry-pick-pr-${{ github.event.pull_request.number }}",
                     "base": "'$TARGET_BRANCH'"
                   }'
               done
