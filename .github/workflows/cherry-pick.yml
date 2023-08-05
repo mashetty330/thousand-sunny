@@ -35,7 +35,6 @@ jobs:
             if [ "$LABEL" != "" ]; then
               echo "PR is merged and labeled with $LABEL"
               TARGET_BRANCH="release-$(echo $LABEL | cut -d'-' -f4-)"
-              echo "Target release branch: $TARGET_BRANCH"
               
               git fetch --all --prune
 
@@ -50,14 +49,14 @@ jobs:
               output=$(git log "${{ github.event.pull_request.merge_commit_sha }}"^.."${{ github.event.pull_request.merge_commit_sha }}" --format="%H")
               commit_shas=$(echo "$output" | sed '1d' | tr '\n' ' ')
               git checkout -b cherry-pick-pr-"${{ github.event.pull_request.number }}" origin/$TARGET_BRANCH
-              echo "checked out cherry pick pr branch"
+              echo "Checked out cherry pick pr branch"
             
-              echo "commit sha ${{ github.event.pull_request.head.sha }}"
+              echo "These are the commits need cherry-pick : $commit_shas"
               git cherry-pick $commit_shas
-              echo "fetched commit"
+              echo "Cherry-picked commits"
               # Handle any potential conflicts here if necessary
               git push origin cherry-pick-pr-"${{ github.event.pull_request.number }}"
-              echo "pushed"
+              echo "Pushed to the Cherry-pick branch"
               # Create a new pull request
               curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
                 -H "Authorization: token ${{ secrets.ACTION_PAT }}" \
@@ -68,6 +67,7 @@ jobs:
                   "head": "cherry-pick-pr-${{ github.event.pull_request.number }}",
                   "base": "'$TARGET_BRANCH'"
                 }'
+                echo "Cherry-pick PR raised successfully"
             else
               echo "PR is not labeled for cherry-pick"
             fi
