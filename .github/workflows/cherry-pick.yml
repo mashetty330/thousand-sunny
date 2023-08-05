@@ -30,8 +30,9 @@ jobs:
         run: |
           if [ "${{ github.event.pull_request.merged }}" == "true" ]; then
             # Extract the version label
-            LABEL=$(node -e "console.log(require('@actions/github').context.payload.pull_request.labels.find(label => /^cherry-pick-release-[0-9]+\\.[0-9]+$/.test(label.name)).name)")
-
+            #LABEL=$(node -e "console.log(require('@actions/github').context.payload.pull_request.labels.find(label => /^cherry-pick-release-[0-9]+\\.[0-9]+$/.test(label.name)).name)")
+            LABEL=$(node -e "const label = require('@actions/github').context.payload.pull_request.labels.find(label => /^cherry-pick-release-[0-9]+\.[0-9]+$/.test(label.name)); console.log(label?.name || 'None.');")
+            echo "$LABEL"
             if [ "$LABEL" != "" ]; then
               echo "PR is merged and labeled with $LABEL"
               TARGET_BRANCH="release-$(echo $LABEL | cut -d'-' -f4-)"
