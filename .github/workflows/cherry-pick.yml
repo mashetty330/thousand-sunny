@@ -64,7 +64,7 @@ jobs:
                 echo "Checked out cherry pick pr branch"
               
                 echo "These are the commits need cherry-pick : $commit_shas"
-                git cherry-pick $commit_shas
+                git cherry-pick $commit_shas || continue
                 echo "Cherry-picked commits"
                 # Handle any potential conflicts here if necessary
                 git push origin "$TARGET_BRANCH"-cherry-pick-pr-"${{ github.event.pull_request.number }}"
