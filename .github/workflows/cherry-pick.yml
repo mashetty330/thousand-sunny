@@ -47,7 +47,7 @@ jobs:
               for label in "${labels[@]}"
               do
                 TARGET_BRANCH="release-$(echo $label | cut -d'-' -f4-)"
-                
+                failed=false
                 git fetch --all --prune
   
                 echo "Target release branch exists: $TARGET_BRANCH"
@@ -64,7 +64,13 @@ jobs:
                 echo "Checked out cherry pick pr branch"
               
                 echo "These are the commits need cherry-pick : $commit_shas"
-                git cherry-pick $commit_shas || git cherry-pick --abort && continue
+                git cherry-pick $commit_shas || failed=true
+                if $failed
+                then
+                  git cherry-pick --abort
+                  echo "Failed to cherry pick $TARGET_BRANCH"
+                  continue
+                fi
                 echo "Cherry-picked commits"
                 # Handle any potential conflicts here if necessary
                 git push origin "$TARGET_BRANCH"-cherry-pick-pr-"${{ github.event.pull_request.number }}"
